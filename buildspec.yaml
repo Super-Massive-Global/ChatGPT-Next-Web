@@ -7,14 +7,11 @@ env:
     - ECR_URL
 
 phases:
-  install:
-    runtime-versions:
-      nodejs: 20
-
   pre_build:
     commands:
       - echo Install dependency libs...
       - yarn install
+      - yarn build
 
   build:
     commands:
