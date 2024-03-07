@@ -10,6 +10,8 @@ phases:
   pre_build:
     commands:
       - echo Install dependency libs...
+      - yum update && yum install nodejs20
+      - npm install --global yarn
       - yarn install
       - yarn build
 
