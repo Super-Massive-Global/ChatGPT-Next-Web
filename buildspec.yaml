@@ -7,17 +7,6 @@ env:
     - ECR_URL
 
 phases:
-  install:
-    runtime-versions:
-      nodejs: 16
-    commends:
-      - n 18  
-
-  pre_build:
-    commands:
-      - echo Install dependency libs...
-      - yarn install
-
   build:
     commands:
       # Check if the tag builder already exists
