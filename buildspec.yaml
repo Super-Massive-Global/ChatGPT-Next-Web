@@ -1,0 +1,53 @@
+version: 0.2
+
+env:
+  exported-variables:
+    - NAMESPACE
+    - ENVIRONMENT
+    - ECR_URL
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 16
+
+  pre_build:
+    commands:
+      - echo Install dependency libs...
+      - yarn install
+
+  build:
+    commands:
+      # Check if the tag builder already exists
+      # If yes: Use for cache
+      # If no: Build without cache
+      - HEAD_REF=$(basename $CODEBUILD_WEBHOOK_HEAD_REF)
+      - COMMIT_ID=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)
+        # set environment based on BRANCH
+      - ENVIRONMENT=prod
+      - echo Logging into Amazon ECR...
+      - aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 559118964552.dkr.ecr.ap-northeast-1.amazonaws.com
+      - docker build -f Dockerfile -t $ECR_URL:$COMMIT_ID -t $ECR_URL:$HEAD_REF -t $ECR_URL:latest --build-arg env=$ENVIRONMENT .
+
+  post_build:
+    commands:
+      - |
+        echo Pushing Docker images... 
+        docker push $ECR_URL:$COMMIT_ID 
+        docker push $ECR_URL:$HEAD_REF 
+        docker push $ECR_URL:latest
+        IMAGE=$ECR_URL:$COMMIT_ID
+
+      - echo Install kubectl
+      - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.20.2/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mv ./kubectl /usr/local/bin/kubectl
+      - echo Prepare kubectl
+      - aws eks --region ap-northeast-1 update-kubeconfig --name massive-eks-0fj47BAg
+      - aws sts get-caller-identity
+      - kubectl config view --minify
+      - kubectl set image -n $NAMESPACE $DEPLOY_TYPE/$BUILD_PROJECT $BUILD_PROJECT=$IMAGE
+
+cache:
+  paths:
+    - "./node_modules/**/*"
