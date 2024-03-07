@@ -7,13 +7,16 @@ env:
     - ECR_URL
 
 phases:
+  install:
+    runtime-versions:
+      nodejs: 16
+    commends:
+      - n 18  
+
   pre_build:
     commands:
       - echo Install dependency libs...
-      - yum update && yum install nodejs20
-      - npm install --global yarn
       - yarn install
-      - yarn build
 
   build:
     commands:
